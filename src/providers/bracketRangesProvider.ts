@@ -113,9 +113,14 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
   private getCollapsedText(bracketsRange: BracketsRange, document: TextDocument, shallow = false): string {
     let collapsedText = "…";
 
-    const showFoldedBodyLinesCount = config.showFoldedBodyLinesCount();
-    if (showFoldedBodyLinesCount) {
-      collapsedText = this.getFoldedLinesCountCollapsedText(bracketsRange);
+    const contentMode = config.collapsedBodyContent();
+    switch (contentMode) {
+      case "count":
+        collapsedText = this.getFoldedLinesCountCollapsedText(bracketsRange);
+        break;
+      case "content":
+        collapsedText = this.getFoldedContentPreview(bracketsRange, document.getText());
+        break;
     }
 
     const showFunctionParameters = config.showFunctionParameters();
@@ -233,6 +238,33 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
     linesCount = Math.max(linesCount, 0); //For empty ranges, the start and end lines are the same.
     const line = linesCount === 1 ? "line" : "lines";
     return ` ⋯ ${linesCount} ${line} ⋯ `;
+  }
+
+  private getFoldedContentPreview(bracketsRange: BracketsRange, text: string): string {
+    const lines = text.split('\n');
+    const { start, end } = bracketsRange;
+
+    const startLineContent = lines[start.line].substring(start.character + 1);
+    const endLineContent = lines[end.line].substring(0, end.character - 1);
+
+    const middleLines = start.line === end.line
+      ? []
+      : lines.slice(start.line + 1, end.line);
+
+    const contentLines = [startLineContent, ...middleLines, endLineContent]
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    if (contentLines.length === 0) return '  ';
+
+    const totalLength = contentLines.join(' ').length;
+    const maxLength = config.collapsedMaxBodyLength();
+
+    if (totalLength > maxLength) return ` ... ${contentLines.length} lines ... `;
+    if (contentLines.length === 1) return ` ${contentLines[0]} `;
+
+
+    return ` ${contentLines.join('; ')} `;
   }
 
   private appendPostFoldingRangeText(
