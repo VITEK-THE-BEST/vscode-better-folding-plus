@@ -9,7 +9,7 @@ export function collapsedBodyContent(): CollapsedBodyMode {
 }
 
 export function collapsedMaxBodyLength() {
-  return workspace.getConfiguration(CONFIG_ID).get<number>("collapsedMaxBodyCharacters") ?? 30;
+  return workspace.getConfiguration(CONFIG_ID).get<number>("collapsedMaxBodyLength") ?? 30;
 }
 
 export function foldClosingBrackets() {
