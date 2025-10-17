@@ -113,8 +113,7 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
   private getCollapsedText(bracketsRange: BracketsRange, document: TextDocument, shallow = false): string {
     let collapsedText = "…";
 
-    const contentMode = config.collapsedBodyContent();
-    switch (contentMode) {
+    switch (config.collapsedBodyContent()) {
       case "count":
         collapsedText = this.getFoldedLinesCountCollapsedText(bracketsRange);
         break;
@@ -255,16 +254,18 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
       .map(line => line.trim())
       .filter(line => line.length > 0);
 
-    if (contentLines.length === 0) return '  ';
+    const contentLinesLength = contentLines.length;
 
-    const totalLength = contentLines.join(' ').length;
+    if (contentLinesLength === 0) return ' ';
+
+    const content = contentLines.join('; ');
     const maxLength = config.collapsedMaxBodyLength();
 
-    if (totalLength > maxLength) return ` ... ${contentLines.length} lines ... `;
-    if (contentLines.length === 1) return ` ${contentLines[0]} `;
+    if (content.length >= maxLength) return ` ... ${contentLinesLength} lines ... `;
+    if (contentLinesLength === 1) return ` ${content} `;
 
 
-    return ` ${contentLines.join('; ')} `;
+    return ` ${content} `;
   }
 
   private appendPostFoldingRangeText(

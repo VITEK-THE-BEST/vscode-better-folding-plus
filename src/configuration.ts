@@ -5,7 +5,7 @@ export type CollapsedBodyMode = "count" | "content" | "none";
 
 export function collapsedBodyContent(): CollapsedBodyMode {
   const mode = workspace.getConfiguration(CONFIG_ID).get<CollapsedBodyMode>("collapsedBodyContent");
-  return mode ?? "count";
+  return mode ?? "content";
 }
 
 export function collapsedMaxBodyLength() {
