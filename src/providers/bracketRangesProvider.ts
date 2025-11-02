@@ -251,7 +251,7 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
       : lines.slice(start.line + 1, end.line);
 
     const contentLines = [startLineContent, ...middleLines, endLineContent]
-      .map(line => line.trim())
+      .map(line => line.trim().replace(/;+$/, ''))
       .filter(line => line.length > 0);
 
     const contentLinesLength = contentLines.length;
@@ -262,8 +262,6 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
     const maxLength = config.collapsedMaxBodyLength();
 
     if (content.length >= maxLength) return ` ... ${contentLinesLength} lines ... `;
-    if (contentLinesLength === 1) return ` ${content} `;
-
 
     return ` ${content} `;
   }
