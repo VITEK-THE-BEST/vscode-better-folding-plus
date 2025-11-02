@@ -101,8 +101,8 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
 
     const endLineContent = document.lineAt(bracketsRange.end.line).text;
     const afterClosing = endLineContent.slice(bracketsRange.end.character);
-
-    if (afterClosing.trim().length > 0) {
+    const endChar = afterClosing.charAt(afterClosing.length - 1)
+    if (endChar === '{' || endChar === '[' || endChar === '(') {
       end = Math.max(start, end - 1);
     }
 
@@ -256,12 +256,9 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
     const lineContent = document.lineAt(line).text;
 
     const afterClosing = lineContent.slice(bracketsRange.end.character);
-    if (afterClosing.trim().length > 0) {
+    const endChar = afterClosing.charAt(afterClosing.length - 1)
+    if (endChar === '{' || endChar === '[' || endChar === '(') {
       return [end, collapsedText.slice(0, -1)];
-    }
-
-    if (!chainFoldingRanges) {
-      collapsedText = initialCollapsedText.slice(0, -1);
     }
 
     for (let column = bracketsRange.end.character; column < lineContent.length; column++) {
