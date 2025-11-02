@@ -124,7 +124,7 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
 
     const showFunctionParameters = config.showFunctionParameters();
     if (showFunctionParameters && bracketsRange.startBracket.token.content === "(") {
-      collapsedText = this.getFunctionParamsCollapsedText(bracketsRange, document);
+      collapsedText = this.getFunctionParamsCollapsedText(bracketsRange, document, collapsedText);
     }
 
     const showObjectPreviews = config.showObjectPreviews();
@@ -140,7 +140,11 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
     return collapsedText;
   }
 
-  private getFunctionParamsCollapsedText(bracketsRange: BracketsRange, document: TextDocument): string {
+  private getFunctionParamsCollapsedText(
+    bracketsRange: BracketsRange,
+    document: TextDocument,
+    collapsedText: string,
+  ): string {
     const paramTokens: string[] = [];
     let line = bracketsRange.start.line;
     let column = bracketsRange.start.character + 1;
@@ -164,7 +168,7 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
       column++;
     }
 
-    return paramTokens.length ? paramTokens.join(", ") : "…";
+    return paramTokens.length ? paramTokens.join(", ") : collapsedText;
   }
 
   private isObjectLiteral(bracketsRange: BracketsRange): boolean {
@@ -251,14 +255,23 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
       : lines.slice(start.line + 1, end.line);
 
     const contentLines = [startLineContent, ...middleLines, endLineContent]
-      .map(line => line.trim().replace(/;+$/, ''))
-      .filter(line => line.length > 0);
+      .map(line => line.trim().replace(/[;,]+$/, ''))
+      .filter(Boolean);
 
     const contentLinesLength = contentLines.length;
 
     if (contentLinesLength === 0) return ' ';
 
-    const content = contentLines.join('; ');
+    const delimiterCounts = { ',': 0, ';': 0 };
+    for (const line of middleLines) {
+      if (line.endsWith(',')) delimiterCounts[',']++;
+      if (line.endsWith(';')) delimiterCounts[';']++;
+    }
+
+    const mostCommonDelimiter =
+      delimiterCounts[','] > delimiterCounts[';'] ? ', ' : '; ';
+
+    const content = contentLines.join(mostCommonDelimiter);
     const maxLength = config.collapsedMaxBodyLength();
 
     if (content.length >= maxLength) return ` ... ${contentLinesLength} lines ... `;
