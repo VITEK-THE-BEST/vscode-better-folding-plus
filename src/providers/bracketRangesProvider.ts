@@ -118,7 +118,7 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
         collapsedText = this.getFoldedLinesCountCollapsedText(bracketsRange);
         break;
       case "content":
-        collapsedText = this.getFoldedContentPreview(bracketsRange, document.getText());
+        collapsedText = this.getFoldedContentPreview(bracketsRange, document);
         break;
     }
 
@@ -243,40 +243,49 @@ export class BracketRangesProvider extends BetterFoldingRangeProvider {
     return ` ⋯ ${linesCount} ${line} ⋯ `;
   }
 
-  private getFoldedContentPreview(bracketsRange: BracketsRange, text: string): string {
-    const lines = text.split('\n');
-    const { start, end } = bracketsRange;
+  private getFoldedContentPreview(bracketsRange: BracketsRange, document: TextDocument): string {
+    let content = document.getText(bracketsRange);
 
-    const startLineContent = lines[start.line].substring(start.character + 1);
-    const endLineContent = lines[end.line].substring(0, end.character - 1);
+    content = content.slice(
+      bracketsRange.startBracket.token.content.length,
+      content.length - bracketsRange.endBracket.token.content.length
+    ).trim();
 
-    const middleLines = start.line === end.line
-      ? []
-      : lines.slice(start.line + 1, end.line);
+    if (!content) return ' ';
 
-    const contentLines = [startLineContent, ...middleLines, endLineContent]
-      .map(line => line.trim().replace(/[;,]+$/, ''))
-      .filter(Boolean);
-
-    const contentLinesLength = contentLines.length;
-
-    if (contentLinesLength === 0) return ' ';
-
+    const contentLines: string[] = [];
     const delimiterCounts = { ',': 0, ';': 0 };
-    for (const line of middleLines) {
-      if (line.endsWith(',')) delimiterCounts[',']++;
-      if (line.endsWith(';')) delimiterCounts[';']++;
+
+    for (let line of content.split('\n')) {
+      line = line.trim();
+
+      if (!line) continue;
+
+      switch (line[line.length - 1]) {
+        case ',':
+          delimiterCounts[',']++;
+          line = line.slice(0, -1);
+          break;
+        case ';':
+          delimiterCounts[';']++;
+          line = line.slice(0, -1);
+          break;
+      }
+
+      if (line) contentLines.push(line);
     }
+
+    if (contentLines.length === 0) return ' ';
 
     const mostCommonDelimiter =
       delimiterCounts[','] > delimiterCounts[';'] ? ', ' : '; ';
 
-    const content = contentLines.join(mostCommonDelimiter);
+    const preview = contentLines.join(mostCommonDelimiter);
     const maxLength = config.collapsedMaxBodyLength();
 
-    if (content.length >= maxLength) return ` ... ${contentLinesLength} lines ... `;
+    if (preview.length >= maxLength) return ` ⋯ ${contentLines.length} lines ⋯ `;
 
-    return ` ${content} `;
+    return ` ${preview} `;
   }
 
   private appendPostFoldingRangeText(
